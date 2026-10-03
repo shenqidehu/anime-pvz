@@ -188,6 +188,7 @@
       onWin: function () { finish(true); },
       onLose: function () { finish(false); }
     }, state.diff);
+    if (typeof window !== 'undefined') window.__pvzGame = state.game;   // 调试钩子
     state.game.start();
 
     // 冷却循环

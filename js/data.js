@@ -173,14 +173,14 @@
     {
       id: 'casual', name: '休闲', stars: '★☆☆☆☆', badge: '轻松体验',
       desc: '僵尸更脆更慢、阳光更宽裕、波次更舒缓，每行还有两台小推车兜底。',
-      hpMul: 0.68, speedMul: 0.86, startSunMul: 1.90,
-      waveMul: 1.34, sunRateMul: 1.40, mowerCount: 2
+      hpMul: 0.68, speedMul: 0.86, startSunMul: 2.10,
+      waveMul: 1.34, sunRateMul: 1.55, mowerCount: 2
     },
     {
       id: 'standard', name: '标准', stars: '★★★☆☆', badge: '推荐',
       desc: '需要合理搭配阵容与节奏，但不会出现「数值上打不过」的情况。',
-      hpMul: 0.80, speedMul: 0.93, startSunMul: 1.55,
-      waveMul: 1.20, sunRateMul: 1.28, mowerCount: 1
+      hpMul: 0.80, speedMul: 0.93, startSunMul: 1.70,
+      waveMul: 1.20, sunRateMul: 1.35, mowerCount: 1
     },
     {
       id: 'challenge', name: '挑战', stars: '★★★★★', badge: '原版强度',
@@ -276,13 +276,13 @@
       zombieSpeedMul: 1.12,
       tombstone: { cols: [0, 1], count: 3 },
       isNew: true,
-      pool: ['sunshroom', 'snowpea', 'chomper', 'potatomine', 'spikeweed', 'melonpult'],
-      desc: '全新关卡。月光下的樱花墓地，天空中不再掉落阳光，前两列被墓碑占据。僵尸更快、更硬，并会出现远程的花魁僵尸与压轴的铁壁巨人。',
+      pool: ['sunflower', 'sunshroom', 'wallnut', 'snowpea', 'chomper', 'potatomine', 'spikeweed', 'melonpult'],
+      desc: '全新关卡。月光下的樱花墓地，天空中不再掉落阳光，前两列被墓碑占据。僵尸更快、更硬，并会出现远程的花魁僵尸与压轴的铁壁巨人。记得带上盾姬胡桃——她是这里唯一的肉盾。',
       brief: {
         map: '夜间墓地草坪 · 5 行 × 9 列；第 1–2 列被 3 座墓碑占据，墓碑所在格无法种植。',
         waves: '共 18 波、3 面旗帜波（第 6 / 12 / 18 波），第 18 波为铁壁巨人压轴的 BOSS 波。',
         zombies: '普通 / 路障 / 铁桶 / 撑杆跳 / 报纸 / 橄榄球 / 铁门 / 舞王 + 专属「花魁僵尸」「铁壁巨人」。',
-        plants: '仅 6 种可用：夜光菇娘、冰室雪、吞噬姬咲夜、地雷娘芋子、荆棘娘伊薔薇、西瓜姬澄华。',
+        plants: '共 8 种可选、6 个卡槽：向日 葵、夜光菇娘（两大经济来源）、盾姬胡桃（坚果墙，唯一的肉盾）、冰室雪、吞噬姬咲夜、地雷娘芋子、荆棘娘伊薔薇、西瓜姬澄华。',
         rules: '夜间无天降阳光（经济全靠夜光菇娘）；墓碑阻挡种植。',
         difficulty: '★★★☆☆ 中等偏难（可在选卡界面切换 休闲/标准/挑战）'
       },

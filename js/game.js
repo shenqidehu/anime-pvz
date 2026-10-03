@@ -95,13 +95,13 @@
     var entLayer = el('div', 'layer entities');
     var prjLayer = el('div', 'layer projectiles');
     var sunLayer = el('div', 'layer suns');
-    var banner = el('div', 'banner');
+    var bannerEl = el('div', 'banner');
     var grid = el('div', 'hitgrid');
     board.appendChild(mowerLayer);
     board.appendChild(entLayer);
     board.appendChild(prjLayer);
     board.appendChild(sunLayer);
-    board.appendChild(banner);
+    board.appendChild(bannerEl);
 
     // 点击网格（占位/种植）
     var hoverGhost = el('div', 'place-ghost');
@@ -140,7 +140,7 @@
     container.appendChild(board);
     G.board = board;
     G.entLayer = entLayer; G.prjLayer = prjLayer; G.sunLayer = sunLayer; G.mowerLayer = mowerLayer;
-    G.bannerEl = banner;
+    G.bannerEl = bannerEl;
 
     /* ---------- 小推车 ---------- */
     for (var mr = 0; mr < ROWS; mr++) {
@@ -188,7 +188,7 @@
     /* ---------- 种植 ---------- */
     function plantAt(def, r, c) {
       if (!G.grid[r]) G.grid[r] = [];
-      var p = { def: def, row: r, col: c, hp: def.hp, maxHp: def.hp, t: 0, dead: false, chewing: 0, armed: false, bombed: false };
+      var p = { def: def, row: r, col: c, hp: def.hp, maxHp: def.hp, t: 0, dead: false, chewing: 0, armed: false, bombed: false, queue: [], atkT: 0 };
       p.el = el('div', 'ent plant kind-' + def.kind, spritesData(def, usePortrait));
       p.el.style.left = colX(c) + 'px';
       p.el.style.top = rowY(r) + 'px';
@@ -238,9 +238,9 @@
     }
 
     function banner(text, cls) {
-      banner.innerHTML = '<div class="banner-inner ' + (cls || '') + '">' + text + '</div>';
-      banner.classList.add('show');
-      setTimeout(function () { banner.classList.remove('show'); }, 2200);
+      bannerEl.innerHTML = '<div class="banner-inner ' + (cls || '') + '">' + text + '</div>';
+      bannerEl.classList.add('show');
+      setTimeout(function () { bannerEl.classList.remove('show'); }, 2200);
     }
 
     /* ---------- 伤害 & 爆炸 ---------- */
@@ -356,19 +356,28 @@
           var anyTarget = rows.some(function (rr) { return rr >= 0 && rr < ROWS && rowHasZombie(rr, cx(p.col)); });
           if (anyTarget && p.t >= (d.kind === 'lob' ? d.lob.interval : d.shoot.interval)) {
             p.t = 0;
+            p.atkT = 0.18;
             p.el.classList.add('attacking');
-            setTimeout(function () { p.el.classList.remove('attacking'); }, 180);
             rows.forEach(function (rr) {
               if (rr < 0 || rr >= ROWS) return;
               if (d.kind === 'lob') {
                 fireLob(p, rr, d.lob);
               } else {
+                // 连发（双发射手等）用「游戏内计时队列」错开，不用 setTimeout：
+                // setTimeout 挂在墙上时钟上，标签页被节流时会与游戏时间脱钩，也无法同步步进。
                 var cnt = d.shoot.count || 1;
-                for (var i = 0; i < cnt; i++) {
-                  setTimeout(function () { if (!p.dead) firePea(p, rr, d.shoot); }, i * 130);
-                }
+                for (var i = 0; i < cnt; i++) p.queue.push({ t: i * 0.13, row: rr, cfg: d.shoot });
               }
             });
+          }
+        }
+        // 攻击动画计时 + 连发队列（均按游戏时间推进）
+        if (p.atkT > 0) { p.atkT -= dt; if (p.atkT <= 0) p.el.classList.remove('attacking'); }
+        if (p.queue.length) {
+          for (var qi = p.queue.length - 1; qi >= 0; qi--) {
+            var job = p.queue[qi];
+            job.t -= dt;
+            if (job.t <= 0) { p.queue.splice(qi, 1); if (!p.dead) firePea(p, job.row, job.cfg); }
           }
         }
         if (d.kind === 'mine') {
@@ -722,6 +731,13 @@
       G.raf = requestAnimationFrame(frame);
     }
     G.start = function () { G.raf = requestAnimationFrame(frame); };
+    // 调试钩子：同步快进 seconds 秒游戏时间（供自动化测试用，UI 不暴露）
+    G.advance = function (seconds) {
+      var dt = 1 / 30, n = Math.floor(seconds / dt);
+      for (var i = 0; i < n && !G.over; i++) step(dt);
+      return { t: Math.round(G.t), spawned: G.spawnIdx, waves: G.waves.length,
+               zombies: G.zombies.length, plants: G.plants.length, over: G.over, status: G.status };
+    };
     G.destroy = function () { G.destroyed = true; cancelAnimationFrame(G.raf); container.innerHTML = ''; };
 
     G.boardsize = { w: BOARD_W, h: BOARD_H };
