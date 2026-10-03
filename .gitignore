@@ -1,0 +1,19 @@
+# ===== 非运行时必需，不随仓库发布 =====
+
+# 15MB AI 生成原图，页面不引用
+assets/raw/
+
+# 2.3MB 本地验证截图
+.shots/
+
+# 本地开发脚本（含 Windows 绝对路径），无网站用途
+tools/
+
+# 16 形象总览图，页面不引用
+assets/_contact_sheet.jpg
+
+# ===== 系统 / 编辑器杂项 =====
+Thumbs.db
+desktop.ini
+.DS_Store
+*~

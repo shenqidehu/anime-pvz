@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二次元植物大战僵尸 · Anime Plants vs Zombies</title>
+<link rel="stylesheet" href="css/style.css?v=10">
+<script>window.PVZ_CONFIG = { usePortraits: true };
+window.addEventListener('error', function (e) {
+  var d = document.getElementById('jserr');
+  if (!d) { d = document.createElement('div'); d.id = 'jserr';
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;background:#b3122a;color:#fff;padding:10px 14px;font:12px/1.5 Consolas,monospace;z-index:9999;white-space:pre-wrap';
+    (document.body || document.documentElement).appendChild(d); }
+  d.textContent += 'JS ERROR: ' + (e.message || '') + ' @ ' + (e.filename || '') + ':' + (e.lineno || 0) + '\n';
+});</script>
+</head>
+<body>
+<div id="app" data-screen="title">
+
+  <!-- ============ 标题页 ============ -->
+  <section id="title" class="screen active">
+    <div class="title-logo">二次元植物大战僵尸</div>
+    <div class="title-sub">萌 系 少 女 守 卫 战</div>
+    <div class="title-en">ANIME PLANTS vs ZOMBIES</div>
+    <div class="title-hero" id="titleHero"></div>
+    <div class="title-actions">
+      <button class="btn primary" id="btnStart">开始冒险</button>
+      <button class="btn ghost" id="btnAlmanac">植物图鉴</button>
+    </div>
+  </section>
+
+  <!-- ============ 关卡选择 ============ -->
+  <section id="levels" class="screen">
+    <div class="page">
+      <div class="page-head">
+        <h2>选择关卡</h2>
+        <div class="spacer"></div>
+        <button class="btn ghost" id="levelsAlmanac">植物图鉴</button>
+      </div>
+      <div class="level-list" id="levelList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 选卡 ============ -->
+  <section id="picker" class="screen">
+    <div class="page">
+      <div class="page-head">
+        <h2 id="pickerTitle">选择植物</h2>
+        <div class="spacer"></div>
+        <span id="pickerLimit" class="lv-sub"></span>
+      </div>
+      <div class="pick-grid" id="pickerGrid"></div>
+      <div class="picker-bar">
+        <button class="btn ghost" id="pickerBack">返回</button>
+        <div class="spacer" style="flex:1"></div>
+        <span>已选 <b id="pickCount">0 / 0</b></span>
+        <button class="btn primary" id="pickerGo">进入战场</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 游戏 ============ -->
+  <section id="game" class="screen">
+    <div class="game-top">
+      <div class="sun-box"><span class="sun-icon"></span><b id="sunCount">50</b></div>
+      <div class="game-title"><span id="gameLevelName">关卡</span>
+        <small id="gameLevelSub"></small>
+      </div>
+      <div class="progress"><i id="progressFill"></i></div>
+      <button class="btn ghost" id="gameQuit">退出关卡</button>
+    </div>
+    <div class="game-wrap">
+      <div class="seedbank" id="seedbank"></div>
+      <div class="board-wrap"><div id="boardHost"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 图鉴 ============ -->
+  <section id="almanac" class="screen">
+    <div class="page">
+      <div class="page-head">
+        <h2>植物图鉴 · 二次元形象</h2>
+        <div class="spacer"></div>
+        <button class="btn ghost" id="almanacBack">返回关卡</button>
+      </div>
+      <div class="al-grid" id="almanacGrid"></div>
+      <div id="almanacZombies"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- 弹窗 -->
+<div id="modal" class="modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">×</button>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<!-- 结算 -->
+<div id="overlay" class="overlay">
+  <div class="ov-box">
+    <h2 class="ov-title"></h2>
+    <p class="ov-text"></p>
+    <div class="ov-actions">
+      <button class="btn primary" id="overlayRetry">再来一次</button>
+      <button class="btn ghost" id="overlayBack">返回关卡</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/sprites.js?v=10"></script>
+<script src="js/data.js?v=10"></script>
+<script src="js/game.js?v=10"></script>
+<script src="js/main.js?v=10"></script>
+<script>
+  // 标题页角色展示 + 关卡页图鉴入口
+  (function () {
+    var hero = document.getElementById('titleHero');
+    ['peashooter', 'sunflower', 'snowpea', 'chomper', 'melonpult', 'cherrybomb', 'sunshroom', 'cobcannon'].forEach(function (id) {
+      var d = window.PVZData.PLANT_MAP[id];
+      var s = document.createElement('div');
+      s.className = 'hero-item';
+      s.innerHTML = '<div class="svgwrap">' + window.AnimeSprites.chibi(d.look) + '</div>' +
+        '<img src="' + d.portrait + '" alt="" onerror="this.remove()">';
+      hero.appendChild(s);
+    });
+    function go(sid) {
+      Array.prototype.forEach.call(document.querySelectorAll('.screen'), function (s) {
+        s.classList.toggle('active', s.id === sid);
+      });
+      document.getElementById('app').dataset.screen = sid;
+    }
+    var la = document.getElementById('levelsAlmanac');
+    if (la) la.onclick = function () { go('almanac'); };
+
+    // 解析阶段（首帧前）直接进入指定界面 / 开局：?play=l3&demo=1 / ?screen=levels
+    try {
+      var qs = new URLSearchParams(location.search);
+      var pid = qs.get('play');
+      var sid = qs.get('screen');
+      if (pid && window.PVZApp && window.PVZApp.autoStart(pid, qs.get('p'), qs.get('demo'))) {
+        window.__pvzHandled = true;
+      } else if (sid) {
+        go(sid);
+        window.__pvzHandled = true;
+      }
+    } catch (e) {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#a00;color:#fff;font:12px monospace;padding:6px 10px;white-space:pre-wrap';
+      d.textContent = 'AUTOSTART ERR: ' + e.message + ' @@ ' + String(e.stack || '').split('\n').slice(0, 3).join(' | ');
+      document.body.appendChild(d);
+    }
+  })();
+</script>
+</body>
+</html>
