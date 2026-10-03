@@ -78,8 +78,38 @@
     });
     $('#pickerTitle').textContent = '选择植物 · ' + lv.name;
     $('#pickerLimit').textContent = '最多 ' + lv.slots + ' 种';
+    // 每次进入选卡都回到默认档位（标准），避免上次的选择默默沿用
+    state.diff = D.DIFFICULTIES.filter(function (d) { return d.id === D.DEFAULT_DIFFICULTY; })[0] || D.DIFFICULTIES[0];
+    renderDifficulty();
     updatePickCount();
     showScreen('picker');
+  }
+
+  /* ---------------- 难度档位 ---------------- */
+  function renderDifficulty() {
+    var row = $('#diffRow');
+    if (!row) return;
+    row.innerHTML = '';
+    D.DIFFICULTIES.forEach(function (d) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'diff-btn' + (state.diff && state.diff.id === d.id ? ' on' : '');
+      b.innerHTML = '<span class="d-name">' + d.name + '</span>' +
+        '<span class="d-stars">' + d.stars + '</span>' +
+        '<span class="d-badge">' + d.badge + '</span>';
+      b.onclick = function () { state.diff = d; renderDifficulty(); };
+      row.appendChild(b);
+    });
+    var d0 = state.diff || D.DIFFICULTIES[0];
+    var parts = [];
+    parts.push('僵尸血量 ×' + d0.hpMul);
+    parts.push('移速 ×' + d0.speedMul);
+    parts.push('起始阳光 ×' + d0.startSunMul);
+    if (d0.sunRateMul !== 1) parts.push('阳光产出 ×' + d0.sunRateMul);
+    if (d0.waveMul !== 1) parts.push('波次间隔 ×' + d0.waveMul);
+    if (d0.mowerCount > 1) parts.push('每行小推车 ' + d0.mowerCount + ' 台');
+    var desc = $('#diffDesc');
+    if (desc) desc.innerHTML = d0.desc + '<br><span class="d-facts">' + parts.join(' ｜ ') + '</span>';
   }
 
   function cardInner(p) {
@@ -112,8 +142,8 @@
 
     showScreen('game');
     $('#gameLevelName').textContent = lv.name;
-    $('#gameLevelSub').textContent = lv.subtitle;
-    $('#sunCount').textContent = lv.startSun;
+    $('#gameLevelSub').textContent = lv.subtitle + ' · ' + (state.diff ? state.diff.name : '标准') + '难度';
+    $('#sunCount').textContent = Math.round(lv.startSun * (state.diff ? state.diff.startSunMul : 1));
 
     // 种子栏
     var bank = $('#seedbank');
@@ -157,7 +187,7 @@
       },
       onWin: function () { finish(true); },
       onLose: function () { finish(false); }
-    });
+    }, state.diff);
     state.game.start();
 
     // 冷却循环
@@ -254,10 +284,12 @@
   /* ---------------- 初始化 ---------------- */
   // 供页面在解析阶段（首帧前）直接进入某界面 / 直接开局
   window.PVZApp = window.PVZApp || {};
-  window.PVZApp.autoStart = function (pid, ps, demo) {
+  window.PVZApp.autoStart = function (pid, ps, demo, diffId) {
     var lv = D.LEVELS.filter(function (x) { return x.id === pid; })[0];
     if (!lv) return false;
     state.level = lv;
+    state.diff = D.DIFFICULTIES.filter(function (d) { return d.id === diffId; })[0] ||
+      D.DIFFICULTIES.filter(function (d) { return d.id === D.DEFAULT_DIFFICULTY; })[0] || D.DIFFICULTIES[0];
     state.chosen = ps ? ps.split(',').filter(function (i) { return D.PLANT_MAP[i]; }) : lv.pool.slice(0, lv.slots);
     startLevel();
     if (demo) {

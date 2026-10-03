@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>二次元植物大战僵尸 · Anime Plants vs Zombies</title>
-<link rel="stylesheet" href="css/style.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
 <script>window.PVZ_CONFIG = { usePortraits: true };
 window.addEventListener('error', function (e) {
   var d = document.getElementById('jserr');
@@ -50,6 +50,12 @@ window.addEventListener('error', function (e) {
         <span id="pickerLimit" class="lv-sub"></span>
       </div>
       <div class="pick-grid" id="pickerGrid"></div>
+
+      <div class="diff-block">
+        <div class="diff-head">难度选择 <span class="diff-hint">僵尸强度 · 阳光宽松度 · 波次节奏</span></div>
+        <div class="diff-row" id="diffRow"></div>
+        <div class="diff-desc" id="diffDesc"></div>
+      </div>
       <div class="picker-bar">
         <button class="btn ghost" id="pickerBack">返回</button>
         <div class="spacer" style="flex:1"></div>
@@ -112,10 +118,10 @@ window.addEventListener('error', function (e) {
 
 <div id="toast" class="toast"></div>
 
-<script src="js/sprites.js?v=10"></script>
-<script src="js/data.js?v=10"></script>
-<script src="js/game.js?v=10"></script>
-<script src="js/main.js?v=10"></script>
+<script src="js/sprites.js?v=11"></script>
+<script src="js/data.js?v=11"></script>
+<script src="js/game.js?v=11"></script>
+<script src="js/main.js?v=11"></script>
 <script>
   // 标题页角色展示 + 关卡页图鉴入口
   (function () {
@@ -142,7 +148,7 @@ window.addEventListener('error', function (e) {
       var qs = new URLSearchParams(location.search);
       var pid = qs.get('play');
       var sid = qs.get('screen');
-      if (pid && window.PVZApp && window.PVZApp.autoStart(pid, qs.get('p'), qs.get('demo'))) {
+      if (pid && window.PVZApp && window.PVZApp.autoStart(pid, qs.get('p'), qs.get('demo'), qs.get('diff'))) {
         window.__pvzHandled = true;
       } else if (sid) {
         go(sid);

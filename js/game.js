@@ -33,16 +33,29 @@
     return h;
   }
 
-  function createGame(container, level, chosen, cb) {
+  function createGame(container, level, chosen, cb, diff) {
     D = global.PVZData;
     var usePortrait = !global.PVZ_CONFIG || global.PVZ_CONFIG.usePortraits !== false;
 
+    // 难度档位：在关卡自身系数之上再叠乘；缺省 = 全 1.0（挑战档 / 原强度）
+    diff = diff || {};
+    var DF = {
+      hpMul: diff.hpMul != null ? diff.hpMul : 1,
+      speedMul: diff.speedMul != null ? diff.speedMul : 1,
+      startSunMul: diff.startSunMul != null ? diff.startSunMul : 1,
+      waveMul: diff.waveMul != null ? diff.waveMul : 1,
+      sunRateMul: diff.sunRateMul != null ? diff.sunRateMul : 1,
+      mowerCount: diff.mowerCount != null ? diff.mowerCount : 1
+    };
+
     var G = {
-      level: level, chosen: chosen, cb: cb || {}, over: false,
-      t: 0, sun: level.startSun, status: 'playing',
+      level: level, chosen: chosen, cb: cb || {}, over: false, diff: DF,
+      t: 0, sun: Math.round(level.startSun * DF.startSunMul), status: 'playing',
       plants: [], zombies: [], projs: [], suns: [], mowers: [],
-      grid: [], spawnIdx: 0, waves: level.waves.slice(),
-      sunTimer: rnd(5, 8), lastFrame: 0, hud: { sun: -1, prog: -1 }, ready: false
+      grid: [], spawnIdx: 0,
+      // 时间轴按 waveMul 拉伸（>1 更舒缓）
+      waves: level.waves.map(function (w) { return { at: +(w.at * DF.waveMul).toFixed(2), type: w.type, flag: w.flag, last: w.last }; }),
+      sunTimer: rnd(5, 8) / DF.sunRateMul, lastFrame: 0, hud: { sun: -1, prog: -1 }, ready: false
     };
 
     /* ---------- 构建 DOM ---------- */
@@ -131,7 +144,7 @@
 
     /* ---------- 小推车 ---------- */
     for (var mr = 0; mr < ROWS; mr++) {
-      var m = { row: mr, x: 6, used: false, running: false, el: el('div', 'mower', '<svg viewBox="0 0 40 46"><rect x="6" y="14" width="28" height="18" rx="5" fill="#c9d2dc" stroke="#8d99a6" stroke-width="3"/><rect x="2" y="8" width="30" height="6" rx="3" fill="#e05a3a"/><circle cx="12" cy="34" r="6" fill="#4a4a55"/><circle cx="28" cy="34" r="6" fill="#4a4a55"/><circle cx="12" cy="34" r="2" fill="#9aa4b0"/><circle cx="28" cy="34" r="2" fill="#9aa4b0"/></svg>') };
+      var m = { row: mr, x: 6, used: false, running: false, left: DF.mowerCount, el: el('div', 'mower', '<svg viewBox="0 0 40 46"><rect x="6" y="14" width="28" height="18" rx="5" fill="#c9d2dc" stroke="#8d99a6" stroke-width="3"/><rect x="2" y="8" width="30" height="6" rx="3" fill="#e05a3a"/><circle cx="12" cy="34" r="6" fill="#4a4a55"/><circle cx="28" cy="34" r="6" fill="#4a4a55"/><circle cx="12" cy="34" r="2" fill="#9aa4b0"/><circle cx="28" cy="34" r="2" fill="#9aa4b0"/></svg>') };
       m.el.style.top = (rowY(mr) + CELL_H - 46) + 'px';
       m.el.style.left = m.x + 'px';
       mowerLayer.appendChild(m.el);
@@ -238,7 +251,7 @@
       if (z.hp <= 0) { killZombie(z); }
       else {
         if (opt && opt.slow) z.slowT = 3;
-        if (z.def.enrage && z.hp <= z.def.enrage.hp) z.rage = true;
+        if (z.def.enrage && z.hp <= z.def.enrage.hp * DF.hpMul) z.rage = true;
         bar(z);
       }
     }
@@ -252,7 +265,7 @@
 
     function bar(z) {
       if (!z.hpEl) return;
-      var r = Math.max(0, z.hp / z.def.hp);
+      var r = Math.max(0, z.hp / (z.maxHp || z.def.hp));
       z.hpEl.style.width = (r * 100) + '%';
       z.hpEl.style.background = r > 0.6 ? '#6ee06e' : r > 0.3 ? '#f5d24a' : '#f26b6b';
     }
@@ -284,7 +297,8 @@
       var def = D.ZOMBIES[type];
       if (!def) return;
       var z = {
-        def: def, row: row, x: BOARD_W + rnd(10, 60), hp: def.hp, t: 0,
+        def: def, row: row, x: BOARD_W + rnd(10, 60),
+        hp: Math.round(def.hp * DF.hpMul), maxHp: Math.round(def.hp * DF.hpMul), t: 0,
         slowT: 0, freezeT: 0, dead: false, vaulted: false, smashCd: 0, summonT: 4, shootT: 0, metal: !!def.metal
       };
       z.el = el('div', 'ent zombie z-' + type, '<div class="svgwrap">' + global.AnimeSprites.chibi(def.look) + '</div>');
@@ -309,7 +323,7 @@
       if (G.level.skySun) {
         G.sunTimer -= dt;
         if (G.sunTimer <= 0) {
-          G.sunTimer = rnd(8, 11);
+          G.sunTimer = rnd(8, 11) / DF.sunRateMul;
           var sx = rnd(MOWER_W + 40, BOARD_W - 60);
           spawnSun(sx, -30, 25, 42);
         }
@@ -332,7 +346,7 @@
         p.t += dt;
         var d = p.def;
         if (d.kind === 'produce') {
-          var itv = d.produce.interval;
+          var itv = d.produce.interval / DF.sunRateMul;
           var amt = d.produce.amount;
           if (d.produce.growAt && p.t >= d.produce.growAt) { amt = d.produce.growAmount; p.el.classList.add('grown'); }
           if (p.t >= itv) { p.t = 0; spawnSun(cx(p.col) + rnd(-14, 14), cy(p.row) - 6, amt, 24); }
@@ -465,7 +479,7 @@
         z.t += dt;
         if (z.hit > 0) { z.hit -= dt; z.el.classList.toggle('hit', z.hit > 0); }
 
-        var speed = z.def.speed * spd;
+        var speed = z.def.speed * spd * DF.speedMul;
         if (z.rage) speed *= z.def.enrage.mul;
         if (z.slowT > 0) { z.slowT -= dt; speed *= 0.5; z.el.classList.add('slow'); }
         else z.el.classList.remove('slow');
@@ -533,13 +547,13 @@
           z.el.style.top = rowY(z.row) + 'px';
         }
 
-        // 到达左侧 → 小推车
+        // 到达左侧 → 小推车（休闲档每行 2 台）
         if (z.x <= MOWER_W + 4) {
           var mw = G.mowers[z.row];
-          if (mw && !mw.used) {
-            mw.used = true; mw.running = true;
+          if (mw && !mw.running && mw.left > 0) {
+            mw.left--; mw.used = true; mw.running = true;
             mw.el.classList.add('run');
-          } else if (!mw || !mw.running) {
+          } else if (!mw || (!mw.running && mw.left <= 0)) {
             lose();
           }
         }
@@ -553,7 +567,16 @@
         G.zombies.forEach(function (z) {
           if (!z.dead && z.row === mw.row && z.x < mw.x + 40 && z.x > mw.x - 40) damageZombie(z, 99999);
         });
-        if (mw.x > BOARD_W) { mw.running = false; mw.el.style.opacity = '.25'; }
+        if (mw.x > BOARD_W) {
+          mw.running = false;
+          if (mw.left > 0) {
+            // 还有备用推车 → 复位再待命
+            mw.x = 6; mw.el.style.left = '6px';
+            mw.el.classList.remove('run');
+          } else {
+            mw.el.style.opacity = '.25';
+          }
+        }
       });
 
       /* 阳光下落 */

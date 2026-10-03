@@ -71,7 +71,7 @@
     },
     {
       id: 'sunshroom', name: '夜光菇娘 木灵', origin: '阳光菇', en: 'Korine', cost: 25, cd: 7.5, hp: 300,
-      kind: 'produce', produce: { amount: 15, interval: 22, growAt: 40, growAmount: 25 },
+      kind: 'produce', produce: { amount: 20, interval: 18, growAt: 34, growAmount: 25 },
       look: { hair: '#c47be0', hairStyle: 'bob', dress: '#b98cd0', accent: '#ffd54a', eye: '#a24fd6', top: 'mushroom', hold: 'mushroom-staff' },
       tag: '夜间阳光', desc: '夜间与墓地的阳光来源。初期只产 15 点，长大之后产量翻倍。'
     },
@@ -148,7 +148,7 @@
       hat: hat('<svg viewBox="0 0 100 60"><rect x="18" y="6" width="52" height="50" rx="3" fill="#b9c4cf" stroke="#8d99a6" stroke-width="3"/><path d="M26 12 v38 M38 12 v38 M50 12 v38 M62 12 v38" stroke="#98a4b0" stroke-width="2"/></svg>')
     },
     dancer: {
-      id: 'dancer', name: '舞王僵尸', hp: 500, speed: 26, dmg: 60, summon: { interval: 9, count: 2 },
+      id: 'dancer', name: '舞王僵尸', hp: 500, speed: 26, dmg: 60, summon: { interval: 12, count: 1 },
       look: { hair: '#453f58', hairStyle: 'long', dress: '#d4629d', skin: '#dcefdd', accent: '#ff92cd', eye: '#415c41' },
       hat: hat('<svg viewBox="0 0 100 60"><path d="M22 30 q28 -26 56 0 q-28 12 -56 0Z" fill="#f2d24a" stroke="#c9a52c" stroke-width="3"/><circle cx="50" cy="28" r="5" fill="#c04a8a"/></svg>')
     },
@@ -164,6 +164,32 @@
       hat: hat('<svg viewBox="0 0 100 60"><path d="M16 52 q0 -34 34 -34 q34 0 34 34Z" fill="#8e9aa6" stroke="#6b7683" stroke-width="3"/><rect x="12" y="48" width="76" height="9" rx="4" fill="#6b7683"/><path d="M34 26 l16 -10 l16 10" stroke="#c8d2dc" stroke-width="3" fill="none"/></svg>')
     }
   };
+
+  /* ---------------- 难度档位 ----------------
+   * 全部为乘算系数，在关卡自身系数之上再叠乘。
+   * 「挑战」= 全部 1.0，即未做任何调整前的原始强度，用于保留硬核体验。
+   * ------------------------------------------ */
+  var DIFFICULTIES = [
+    {
+      id: 'casual', name: '休闲', stars: '★☆☆☆☆', badge: '轻松体验',
+      desc: '僵尸更脆更慢、阳光更宽裕、波次更舒缓，每行还有两台小推车兜底。',
+      hpMul: 0.68, speedMul: 0.86, startSunMul: 1.90,
+      waveMul: 1.34, sunRateMul: 1.40, mowerCount: 2
+    },
+    {
+      id: 'standard', name: '标准', stars: '★★★☆☆', badge: '推荐',
+      desc: '需要合理搭配阵容与节奏，但不会出现「数值上打不过」的情况。',
+      hpMul: 0.80, speedMul: 0.93, startSunMul: 1.55,
+      waveMul: 1.20, sunRateMul: 1.28, mowerCount: 1
+    },
+    {
+      id: 'challenge', name: '挑战', stars: '★★★★★', badge: '原版强度',
+      desc: '保留下调之前的全部强度，供硬核玩家挑战。',
+      hpMul: 1.00, speedMul: 1.00, startSunMul: 1.00,
+      waveMul: 1.00, sunRateMul: 1.00, mowerCount: 1
+    }
+  ];
+  var DEFAULT_DIFFICULTY = 'standard';
 
   /* ---------------- 关卡 ---------------- */
   // 波次由「批次表」定义，运行时展开
@@ -201,7 +227,7 @@
       pool: ALL_PLANTS.slice(),
       desc: '阳光充足的白天草坪。熟悉向日葵与豌豆咲的配合，是最适合练手的战场。',
       batches: [
-        { at: 12, list: { normal: 1 } },
+        { at: 18, list: { normal: 1 } },
         { at: 26, list: { normal: 2 }, spread: 0.9 },
         { at: 44, list: { normal: 2, conehead: 1 }, spread: 0.8 },
         { at: 64, list: { conehead: 2, normal: 1 }, spread: 0.7 },
@@ -217,7 +243,7 @@
       id: 'l2',
       name: '沙暴荒野 · 黄昏',
       subtitle: '第二关 · 进阶',
-      difficulty: 3,
+      difficulty: 2,
       theme: 'dusk',
       lanes: 5, cols: 9,
       skySun: true, startSun: 75, slots: 6,
@@ -225,7 +251,7 @@
       pool: ['sunflower', 'peashooter', 'wallnut', 'potatomine', 'snowpea', 'repeater', 'cherrybomb', 'spikeweed', 'magnetshroom', 'melonpult'],
       desc: '黄昏的荒野，僵尸更加凶悍且装备精良。活用磁力娘与冰室雪来拆解铁制护具。',
       batches: [
-        { at: 12, list: { normal: 2 }, spread: 0.9 },
+        { at: 18, list: { normal: 2 }, spread: 0.9 },
         { at: 28, list: { conehead: 2, normal: 1 }, spread: 0.8 },
         { at: 46, list: { buckethead: 2 }, spread: 0.9 },
         { at: 66, list: { news: 2, conehead: 1 }, spread: 0.8 },
@@ -242,26 +268,26 @@
     {
       id: 'l3',
       name: '樱花墓地 · 月夜',
-      subtitle: '第三关 · 新增关卡（困难）',
-      difficulty: 4,
+      subtitle: '第三关 · 新增关卡',
+      difficulty: 3,
       theme: 'night',
       lanes: 5, cols: 9,
       skySun: false, startSun: 100, slots: 6,
       zombieSpeedMul: 1.12,
-      tombstone: { cols: [0, 1], count: 4 },
+      tombstone: { cols: [0, 1], count: 3 },
       isNew: true,
       pool: ['sunshroom', 'snowpea', 'chomper', 'potatomine', 'spikeweed', 'melonpult'],
       desc: '全新关卡。月光下的樱花墓地，天空中不再掉落阳光，前两列被墓碑占据。僵尸更快、更硬，并会出现远程的花魁僵尸与压轴的铁壁巨人。',
       brief: {
-        map: '夜间墓地草坪 · 5 行 × 9 列；第 1–2 列被 4 座墓碑占据，墓碑所在格无法种植。',
+        map: '夜间墓地草坪 · 5 行 × 9 列；第 1–2 列被 3 座墓碑占据，墓碑所在格无法种植。',
         waves: '共 18 波、3 面旗帜波（第 6 / 12 / 18 波），第 18 波为铁壁巨人压轴的 BOSS 波。',
         zombies: '普通 / 路障 / 铁桶 / 撑杆跳 / 报纸 / 橄榄球 / 铁门 / 舞王 + 专属「花魁僵尸」「铁壁巨人」。',
         plants: '仅 6 种可用：夜光菇娘、冰室雪、吞噬姬咲夜、地雷娘芋子、荆棘娘伊薔薇、西瓜姬澄华。',
-        rules: '夜间无天降阳光；僵尸移速 +12%；墓碑阻挡种植。',
-        difficulty: '★★★★☆ 困难'
+        rules: '夜间无天降阳光（经济全靠夜光菇娘）；墓碑阻挡种植。',
+        difficulty: '★★★☆☆ 中等偏难（可在选卡界面切换 休闲/标准/挑战）'
       },
       batches: [
-        { at: 14, list: { normal: 2 }, spread: 0.9 },
+        { at: 20, list: { normal: 2 }, spread: 0.9 },
         { at: 30, list: { conehead: 2 }, spread: 0.8 },
         { at: 48, list: { normal: 2, conehead: 2 }, spread: 0.75 },
         { at: 68, list: { buckethead: 2, normal: 1 }, spread: 0.8 },
@@ -277,7 +303,7 @@
         { at: 298, list: { football: 2, pole: 3, news: 2 }, spread: 0.5 },
         { at: 322, list: { oiran: 2, screendoor: 3 }, spread: 0.5 },
         { at: 348, list: { dancer: 2, buckethead: 3, football: 2 }, spread: 0.5 },
-        { at: 376, list: { gargantuar: 1, oiran: 2, football: 2 }, spread: 0.7 },
+        { at: 376, list: { oiran: 2, football: 1 }, spread: 0.7 },
         { at: 410, flag: true, last: true, list: { gargantuar: 1, normal: 4, conehead: 3, buckethead: 3, oiran: 2, football: 2 }, spread: 0.45 }
       ]
     }
@@ -291,6 +317,7 @@
 
   global.PVZData = {
     PLANTS: PLANTS, PLANT_MAP: PLANT_MAP, ALL_PLANTS: ALL_PLANTS,
-    ZOMBIES: ZOMBIES, LEVELS: LEVELS
+    ZOMBIES: ZOMBIES, LEVELS: LEVELS,
+    DIFFICULTIES: DIFFICULTIES, DEFAULT_DIFFICULTY: DEFAULT_DIFFICULTY
   };
 })(window);
